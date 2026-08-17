@@ -274,13 +274,15 @@ I won’t go ahead and re-explain what he already explained in his article, go c
 
 ### Enforcing DSE on :
 
-Like many other DRMs (such as Byfron), DSE could be enforced to make sure that the game wouldn’t run under Windows Test Mode. Since unsigned drivers can’t run, the main `hyperkd.sys` driver and `SimpleSVM.sys` will fail to work.
+Like many other DRMs (such as Byfron), DSE could be enforced to make sure that the game wouldn’t run under Windows Test Mode. Since unsigned drivers can’t run, the main `hyperkd.sys` driver and `SimpleSVM.sys` will fail to work. (Denuvo seems to already do this)
 
 ### Timing Checks :
 
 While timing checks seem like a good idea especially knowing that the Hypervisor has to make vmexits on multiple functions, it is unreliable and can be very noisy which could lead to false positives.  
   
 With that being said, I don’t recommend timing checks as a solution as it will cause issues and can be spoofed with a hardened enough spoofing implementation.
+
+Some reported that some timing checks could be stable enough to be used in the case of Denuvo but I doubt that they would be implemented.
 
 ### Explaining the current Denuvo situation :
 
