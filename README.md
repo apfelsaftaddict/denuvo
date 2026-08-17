@@ -1,6 +1,6 @@
 # Analyzing a Denuvo bypass approach based on virtualization.
 
-[![](Analyzing_a.png)](Analyzing_a.png)
+[![](media/Analyzing_a.png)](Analyzing_a.png)
 
 Hello everyone, since lately there has been a surge of hypervisor-based releases that aim to bypass Denuvo’s DRM, I decided to make a pretty short technical write-up describing what this approach looks like and how it works from a technical perspective.  
   
@@ -52,9 +52,9 @@ In the sample shown here, `amd_ags_x64.dll` \[4\] is replaced with a patched pro
 
 -   The original legitimate AMD GPU Services SDK dll \[4\], renamed as `amd_ags_x64.org`.
 
-[![](image.png)](image.png)
+[![](media/image.png)](image.png)
 
-[![](image%201.png)](image%201.png)
+[![](media/image%201.png)](image%201.png)
 
 Since the bypass dll is set as a static import, it will be loaded automatically by the Windows loader without needing a separate injector.
 
@@ -70,7 +70,7 @@ In the sample:
 
 -   `"GenuineIntel"` → `hyperkd.sys` \[2\]
 
-[![](image%202.png)](image%202.png)
+[![](media/image%202.png)](image%202.png)
 
 ### 2) Service creation and driver start :
 
@@ -80,15 +80,15 @@ Because hardware virtualization is typically exclusive, the logic often includes
 
 Some screenshots of this logic :  
 
-[![](image.jpg)](image.jpg)
+[![](media/image.jpg)](image.jpg)
 
-[![](image%203.png)](image%203.png)
+[![](media/image%203.png)](image%203.png)
 
 ### 3) Resolving syscall numbers from ntdll :
 
 Syscall numbers are taken from `ntdll.dll` and are then used in other functions.
 
-[![](image%204.png)](image%204.png)
+[![](media/image%204.png)](image%204.png)
 
 ### 4) IAT hooking :
 
@@ -96,13 +96,13 @@ IAT hooking is used to redirect selected imports in the game’s executable.
   
 Hooked imports are : `ntdll.dll`, `kernel32.dll`, `kernelbase.dll`, `user32.dll`
 
-[![](image%205.png)](image%205.png)
+[![](media/image%205.png)](image%205.png)
 
-[![](image%206.png)](image%206.png)
+[![](media/image%206.png)](image%206.png)
 
-[![](image%207.png)](image%207.png)
+[![](media/image%207.png)](image%207.png)
 
-[![](image%208.png)](image%208.png)
+[![](media/image%208.png)](image%208.png)
 
 With the IAT patched, calls that would normally go directly to these modules are routed through the bypass dll’s handlers.
 
@@ -110,7 +110,7 @@ With the IAT patched, calls that would normally go directly to these modules are
 
 Inside the main bypass dll, there are 2 different pre-generated tokens that are assigned depending on the host’s CPU architecture and the corresponding hypervisor (as shown below). These tokens are written to a .bin file on first launch and are then used by the hypervisor as Denuvo tokens.  
 
-[![](image(2).jpg)](image\(2\).jpg)
+[![](media/image(2).jpg)](image\(2\).jpg)
 
 ###   
   
@@ -121,15 +121,15 @@ Small Notes :
 -   HyperEvade was used to also further hide the hypervisor (I will talk about this more later).  
     
 
-[![](image%209.png)](image%209.png)
+[![](media/image%209.png)](image%209.png)
 
 The CPU brand string in the sample I analyzed is set to `DenuvOWO CPU @ 1337 GHz`. XD
 
-[![](image%2010.png)](image%2010.png)
+[![](media/image%2010.png)](image%2010.png)
 
 ## Let’s dive more into the details! :  
 
-[![](image%2011.png)](image%2011.png)
+[![](media/image%2011.png)](image%2011.png)
 
 HyperDBG is a very advanced debugger and thus I won’t analyze every part of it and more or so focus on the main part of hardware spoofing and how it can be done in the context of Denuvo.  
   
@@ -153,7 +153,7 @@ We can then use the `!cpuid` command \[5\] to directly spoof our CPU values!
 For this example, I’m going with an i9-11900K.  
 The standard signature is typically `0x000A0671`, So, we can simply pass a command to HyperDBG to tell it to overwrite the CPUID to match our CPU.
 
-[![](image%2012.png)](image%2012.png)
+[![](media/image%2012.png)](image%2012.png)
 
 Here we’re setting our CPUID to `0x000A0671`and flipping the Hypervisor Present bit to 0 to keep HyperDBG from getting detected.  
   
@@ -165,7 +165,7 @@ The whole string is 48 bytes long and so we must break it into 3 segments of 16 
   
 **Note** : Pretty sure we can change this value to whatever we want although I’m not sure.
 
-[![](image%2013.png)](image%2013.png)
+[![](media/image%2013.png)](image%2013.png)
 
 Now that is this done, let’s move to spoofing the values in the specific leaves to ensure that they match our CPU \[14\].  
   
@@ -178,7 +178,7 @@ There’s a lot more to spoof to ensure that the CPU matches perfectly, we can�
   
 Let’s start by spoofing extended feature flags \[6\]. I’ll continue with my CPU of i9-11900K.
 
-[![](image%2014.png)](image%2014.png)
+[![](media/image%2014.png)](image%2014.png)
 
 This leaf (0x7 / 0) is used to check if your CPU supports specific security or performance features. If you’re on an older model and these flags mismatch, it might cause some issues.
 
@@ -194,7 +194,7 @@ Okay, now that that is done, let’s keep going.
 
 Since Topology Enumeration can be used to know how many logical processors and cores actually exist, we can also spoof these values to match our CPU.
 
-[![](image%2016.png)](image%2016.png)
+[![](media/image%2016.png)](image%2016.png)
 
 Now we’re fully done with spoofing our CPU values and we’re good to go.
 
@@ -208,7 +208,7 @@ The specific syscall that we have to spoof here is `NtDeviceIoControlFile`, whic
 
 **Note** : `IOCTL_STORAGE_GET_DEVICE_NUMBER` does not return serial numbers; serial/model information is typically queried through other storage IOCTLs (for example via `IOCTL_STORAGE_QUERY_PROPERTY` / `StorageDeviceProperty`), so those are the requests you’d generally need to intercept if the goal is serial spoofing.  
 
-[![](image%2017.png)](image%2017.png)
+[![](media/image%2017.png)](image%2017.png)
 
 ### Spoofing Windows build number :
 
@@ -216,7 +216,7 @@ Let’s now spoof the Windows build number, as always, make sure it matches the 
   
 Here I’m going to use the `!epthook` command to spoof the `NtBuildNumber` in `KUSER_SHARED_DATA`, this command can also be used to spoof all the different values in `KUSER_SHARED_DATA`.
 
-[![](image%2018.png)](image%2018.png)
+[![](media/image%2018.png)](image%2018.png)
 
 **Note** : There are many other values that should be spoofed in `KUSER_SHARED_DATA` , If I mention all of them here the article will turn into a 20 page manual on details of `KUSER_SHARED_DATA`
 
@@ -228,9 +228,9 @@ In this example, I’m spoofing my GPU to an `AMD Radeon RX 6800 XT`. (to unders
   
 For this, I’m going to spoof 5 different values, which are the `Vendor ID`, `Device ID`, `Revision ID`, `Subsystem Vendor ID` and `Subsystem ID` .  
 
-[![](image%2019.png)](image%2019.png)
+[![](media/image%2019.png)](image%2019.png)
 
-[![](image%2020.png)](image%2020.png)
+[![](media/image%2020.png)](image%2020.png)
 
 ### Better stealth :
 
@@ -288,7 +288,7 @@ There are many checks that can be used to detect hypervisors, but the issue is m
   
 An obvious check is already implemented in the bypass dll itself.  
 
-[![](image%2021.png)](image%2021.png)
+[![](media/image%2021.png)](image%2021.png)
 
 Here the dll checks for the Microsoft Hyper-V interface signature using cpuid, and Denuvo could theoretically just start checking every cpuid value and using it for token generation, but that would just end up with another cat and mouse game where Denuvo adds more checks and hypervisor releases keep adding more spoofs which is not reliable at all as a long term solution for hypervisors.  
   
@@ -314,7 +314,7 @@ An overkill approach for detecting such Hypervisors would be to either :
 
 After we’re done, we can go ahead and generate the Denuvo token matching our CPU (if you have the CPU) or simply generate a new Denuvo token for these specific values in a VM or some kind of Hypervisor (figure it out yourself, there’s a million approaches for this). Though I would recommend that you generate it inside an environment with these values and then use the same values from the environment to avoid any problems with the bypass.
 
-[![](konata-konata-happy.png)](konata-konata-happy.png)
+[![](media/konata-konata-happy.png)](konata-konata-happy.png)
 
 ## Summary :
 
